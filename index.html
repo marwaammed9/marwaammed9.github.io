@@ -340,81 +340,95 @@
     </div>
 
     <script>
-        const GITHUB_USERNAME = 'marwaammed9';
-        let allRepos = [];
+    const GITHUB_USERNAME = 'marwaammed9';
+    let allRepos = [];
 
-        async function fetchGitHubRepos() {
-    const container = document.getElementById('projects-container');
-    try {
-        // جلب المستودعات مع استبعاد مستودع GitHub Pages نفسه
-        const response = await fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos?sort=updated&per_page=50`);
-        if (!response.ok) throw new Error('Failed to fetch');
-        let repos = await response.json();
-        
-        // استبعاد مستودع GitHub Pages نفسه من الظهور
-        const pagesRepoName = `${GITHUB_USERNAME}.github.io`;
-        repos = repos.filter(repo => repo.name !== pagesRepoName);
-        
-        allRepos = repos;
-                if (!response.ok) throw new Error('Failed to fetch');
-                const repos = await response.json();
-                allRepos = repos;
-                if (repos.length === 0) {
-                    container.innerHTML = '<div class="error-message">No repositories found.</div>';
-                    return;
-                }
-                displayRepositories(repos);
-            } catch (error) {
-                container.innerHTML = '<div class="error-message">Unable to load repositories from GitHub.</div>';
+    async function fetchGitHubRepos() {
+        const container = document.getElementById('projects-container');
+        try {
+            const response = await fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos?sort=updated&per_page=50`);
+            
+            if (!response.ok) throw new Error('Failed to fetch');
+            
+            let repos = await response.json();
+            
+            // استبعاد مستودع GitHub Pages نفسه
+            const pagesRepoName = `${GITHUB_USERNAME}.github.io`;
+            repos = repos.filter(repo => repo.name !== pagesRepoName);
+            
+            allRepos = repos;
+            
+            if (repos.length === 0) {
+                container.innerHTML = '<div class="error-message">No repositories found.</div>';
+                return;
             }
+            displayRepositories(repos);
+        } catch (error) {
+            container.innerHTML = '<div class="error-message">Unable to load repositories from GitHub. Please try again later.</div>';
+            console.error('Error:', error);
         }
+    }
 
-        function displayRepositories(repos) {
-            const container = document.getElementById('projects-container');
-            const projectsHTML = `
-                <div class="projects-grid">
-                    ${repos.map(repo => `
-                        <div class="project-card">
-                            <h3>📁 <a href="${repo.html_url}" target="_blank">${repo.name}</a></h3>
-                            <p>${repo.description || 'No description provided.'}</p>
-                            ${repo.language ? `<div class="language-badge" style="background: ${getLanguageColor(repo.language)}20; color: ${getLanguageColor(repo.language)};">💻 ${repo.language}</div>` : ''}
-                            <div class="project-stats">
-                                <span>⭐ ${repo.stargazers_count || 0}</span>
-                                <span>🍴 ${repo.forks_count || 0}</span>
-                                <span>📅 Updated: ${new Date(repo.updated_at).toLocaleDateString()}</span>
-                            </div>
+    function displayRepositories(repos) {
+        const container = document.getElementById('projects-container');
+        const projectsHTML = `
+            <div class="projects-grid">
+                ${repos.map(repo => `
+                    <div class="project-card">
+                        <h3>📁 <a href="${repo.html_url}" target="_blank">${repo.name}</a></h3>
+                        <p>${repo.description || 'No description provided.'}</p>
+                        ${repo.language ? `<div class="language-badge" style="background: ${getLanguageColor(repo.language)}20; color: ${getLanguageColor(repo.language)};">💻 ${repo.language}</div>` : ''}
+                        <div class="project-stats">
+                            <span>⭐ ${repo.stargazers_count || 0}</span>
+                            <span>🍴 ${repo.forks_count || 0}</span>
+                            <span>📅 Updated: ${new Date(repo.updated_at).toLocaleDateString()}</span>
                         </div>
-                    `).join('')}
-                </div>
-            `;
-            container.innerHTML = projectsHTML;
-        }
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        container.innerHTML = projectsHTML;
+    }
 
-        function getLanguageColor(language) {
-            const colors = { 'C++': '#f34b7d', 'C#': '#178600', 'JavaScript': '#f1e05a', 'Python': '#3572A5' };
-            return colors[language] || '#6e7681';
-        }
+    function getLanguageColor(language) {
+        const colors = { 
+            'C++': '#f34b7d', 
+            'C#': '#178600', 
+            'JavaScript': '#f1e05a', 
+            'Python': '#3572A5',
+            'HTML': '#e34c26',
+            'CSS': '#563d7c'
+        };
+        return colors[language] || '#6e7681';
+    }
 
-        function filterRepositories(category) {
-            if (!allRepos.length) return;
-            let filtered = [...allRepos];
-            if (category === 'C++') filtered = allRepos.filter(repo => repo.language === 'C++');
-            else if (category === 'C#') filtered = allRepos.filter(repo => repo.language === 'C#');
-            else if (category === 'recent') filtered = allRepos.slice(0, 6);
-            displayRepositories(filtered);
+    function filterRepositories(category) {
+        if (!allRepos.length) return;
+        let filtered = [...allRepos];
+        if (category === 'C++') {
+            filtered = allRepos.filter(repo => repo.language === 'C++');
+        } else if (category === 'C#') {
+            filtered = allRepos.filter(repo => repo.language === 'C#');
+        } else if (category === 'recent') {
+            filtered = allRepos.slice(0, 6);
         }
+        // "all" تعني عرض الكل
+        displayRepositories(filtered);
+    }
 
-        function setupNavigation() {
-            document.querySelectorAll('.nav-menu a').forEach(link => {
-                link.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    filterRepositories(this.getAttribute('data-category'));
-                });
+    function setupNavigation() {
+        document.querySelectorAll('.nav-menu a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const category = this.getAttribute('data-category');
+                filterRepositories(category);
             });
-        }
+        });
+    }
 
-        fetchGitHubRepos();
-        setupNavigation();
+    // تحميل المشاريع عند فتح الصفحة
+    fetchGitHubRepos();
+    setupNavigation();
     </script>
 </body>
 
